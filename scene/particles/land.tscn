@@ -1,0 +1,42 @@
+[gd_scene load_steps=7 format=3 uid="uid://dhtbdt367q8jn"]
+
+[ext_resource type="Script" uid="uid://dotl2ogcek3l0" path="res://script/particle.gd" id="1_fndwk"]
+
+[sub_resource type="Gradient" id="Gradient_fndwk"]
+offsets = PackedFloat32Array(0)
+colors = PackedColorArray(0.192157, 0.882353, 0.72549, 0.454902)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_y78je"]
+gradient = SubResource("Gradient_fndwk")
+width = 2
+height = 2
+
+[sub_resource type="Curve" id="Curve_fndwk"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.810219, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_y78je"]
+curve = SubResource("Curve_fndwk")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_8vbf3"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(8, 1, 1)
+direction = Vector3(0, -1, 0)
+initial_velocity_min = 2.0
+initial_velocity_max = 2.0
+gravity = Vector3(0, 4, 0)
+alpha_curve = SubResource("CurveTexture_y78je")
+collision_mode = 1
+collision_friction = 0.0
+collision_bounce = 1.0
+
+[node name="LandParticle" type="GPUParticles2D"]
+emitting = false
+texture = SubResource("GradientTexture2D_y78je")
+one_shot = true
+explosiveness = 0.99
+process_material = SubResource("ParticleProcessMaterial_8vbf3")
+script = ExtResource("1_fndwk")
+
+[connection signal="finished" from="." to="." method="_on_finished"]

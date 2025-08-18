@@ -33,6 +33,13 @@ const SLIDE_SPEED:float = 150.0
 # Animation and Collision
 @onready var anim:AnimatedSprite2D = $AnimatedSprite2D
 
+# For running once on an event
+var was_on_floor:bool = false
+
+## Particles
+
+@onready var land_particle:PackedScene = load("res://scene/particles/land.tscn")
+
 var active_collision:Node2D
 func set_active_collision(to:Node2D):
 	if to is not CollisionPolygon2D and to is not CollisionShape2D or to == active_collision:
@@ -74,6 +81,14 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor() and not is_in_velocity_cloud:
 		velocity += get_gravity() * delta
 	
+	# Make landing particles
+	if not was_on_floor and is_on_floor():
+		Global.make_particle.emit(land_particle, global_position + Vector2(0, 8))
+	if is_on_floor():
+		was_on_floor = true
+	else:
+		was_on_floor = false
+	
 	## Jumping 
 	
 	# Jump Buffering
@@ -87,6 +102,7 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor():
 		coyote_time = COYOTE_TIME
 		left_floor_buffer = LEFT_FLOOR_BUFFER
+		
 	
 	# Handle jump.
 	if jump_buffering > 0 and coyote_time > 0:
@@ -147,6 +163,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, current_friction)
 	
 	if velocity != Vector2.ZERO:
+		anim.flip_h = velocity.x < 0
 		if is_on_floor():
 			anim.play("walking", abs(velocity.x) / 100)
 			set_active_collision($WalkingCol)
@@ -154,10 +171,11 @@ func _physics_process(delta: float) -> void:
 			anim.play("sliding", velocity.y / 80)
 			set_active_collision($SlideCol)
 			active_collision.position.x = match_sign(active_collision.position.x, -wall_side)
+			anim.flip_h = (wall_side + 1) / 2
 		else:
 			anim.play("midair", (velocity.x + velocity.y) / 160)
 			set_active_collision($MidAirCol)
-		anim.flip_h = velocity.x < 0
+		
 	else:
 		set_active_collision($WalkingCol)
 		anim.play("idle")
