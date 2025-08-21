@@ -33,8 +33,6 @@ const SLIDE_SPEED:float = 150.0
 # Animation and Collision
 @onready var anim:AnimatedSprite2D = $AnimatedSprite2D
 
-
-@onready var label:Label = $Label
 ## Particles
 
 
@@ -82,6 +80,10 @@ func _ready() -> void:
 	add_child(wall_particle)
 
 func _physics_process(delta: float) -> void:
+	
+	
+	if global_position.y + 8 > Global.lava_level and Global.round_active:
+		Global.end_round.emit()
 	
 	# Add the gravity.
 	if not is_on_floor() and not is_in_velocity_cloud:

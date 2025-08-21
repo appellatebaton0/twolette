@@ -4,6 +4,8 @@ class_name Main
 
 @onready var world:Node2D = $World
 @onready var player:Player = get_tree().get_first_node_in_group("Player")
+@onready var spawnpoint:Vector2 = $World/Spawnpoint.global_position
+@onready var default_scoreboard:String = $World/Score/Label.text
 
 const MAX_LEVEL_AREA:int = 4
 
@@ -44,7 +46,7 @@ func get_levels() -> Array[PackedScene]:
 
 	return levels
 
-var loaded_levels:Array[Level]
+@export var loaded_levels:Array[Level]
 
 func load_level(coordinates:Vector2):
 	# Load a random level up, add it to the world and the list of levels
@@ -107,7 +109,17 @@ func _process(delta: float) -> void:
 	load_neighbor_levels()
 	unload_far_levels()
 	
-	player.label.text = str(len(loaded_levels))
+	$CanvasLayer/UI.modulate.a = move_toward($CanvasLayer/UI.modulate.a, 1.0 if Global.fading else 0.0, delta)
+	if Global.fading and $CanvasLayer/UI.modulate.a >= 1.0:
+		$World/Tutorial.visible = false
+		
+		Global.lava_level = 250.0
+		Global.fading = false
+		
+		player.global_position = spawnpoint
+		
+		$World/Score.visible = true
+		$World/Score/Label.text = default_scoreboard.replace("_", str(Global.score)).replace("-", str(Global.highscore))
 
 ## Audio
 
