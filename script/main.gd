@@ -27,6 +27,9 @@ func get_levels() -> Array[PackedScene]:
 				print("Found directory: " + file_name)
 			# Found a file
 			else:
+				
+				file_name = file_name.replace(".remap", "")
+				
 				# Load the scene 
 				var potential_level_scene = load(path + file_name)
 				
@@ -90,7 +93,12 @@ func unload_far_levels():
 		
 		var distance = abs((coordinates.x + coordinates.y) - (player_coordinates.x + player_coordinates.y))
 		
-		if distance > MAX_LEVEL_AREA:
+		if distance > MAX_LEVEL_AREA and not level.keep:
+			loaded_levels.erase(level)
+			level.queue_free()
+func unload_all_levels():
+	for level in loaded_levels:
+		if not level.keep:
 			loaded_levels.erase(level)
 			level.queue_free()
 
@@ -116,7 +124,10 @@ func _process(delta: float) -> void:
 		Global.lava_level = 250.0
 		Global.fading = false
 		
+		Global.player_can_control = true
 		player.global_position = spawnpoint
+		
+		unload_all_levels()
 		
 		$World/Score.visible = true
 		$World/Score/Label.text = default_scoreboard.replace("_", str(Global.score)).replace("-", str(Global.highscore))

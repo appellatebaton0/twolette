@@ -15,6 +15,8 @@ var fading:bool = false
 var score:float = 0.0
 var highscore:float = 0.0
 
+var player_can_control:bool = true
+
 func _ready() -> void:
 	start_round.connect(_on_start_round)
 	end_round.connect(_on_end_round)
@@ -22,6 +24,7 @@ func _ready() -> void:
 func _on_start_round():
 	round_active = true
 func _on_end_round():
+	player_can_control = false
 	
 	score = floor(abs(lava_level - 120)) / 10
 	

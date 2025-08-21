@@ -142,6 +142,7 @@ position = Vector2(0, 0.5)
 shape = SubResource("RectangleShape2D_s4jxa")
 
 [node name="Label" type="Label" parent="."]
+visible = false
 offset_left = -3.0
 offset_top = -22.0
 offset_right = 37.0

@@ -33,10 +33,15 @@ const SLIDE_SPEED:float = 150.0
 # Animation and Collision
 @onready var anim:AnimatedSprite2D = $AnimatedSprite2D
 
-## Particles
+## Particles & sfx
 
+var last_position:Vector2
+
+@onready var land_sfx:AudioStream = load("res://asset/land.wav")
+@onready var jump_sfx:AudioStream = load("res://asset/jump.wav")
 
 var was_on_floor:bool = false
+var was_on_wall:bool = false
 
 @onready var wall_particle:Particle = load("res://scene/particles/hit_wall.tscn").instantiate()
 
@@ -93,7 +98,7 @@ func _physics_process(delta: float) -> void:
 	
 	# Jump Buffering
 	jump_buffering = move_toward(jump_buffering, 0, delta)
-	if Input.is_action_just_pressed("Jump"):
+	if Input.is_action_just_pressed("Jump") and Global.player_can_control:
 		jump_buffering = JUMP_BUFFERING
 	
 	# Coyote Time (and the left_floor_buffer)
@@ -106,6 +111,7 @@ func _physics_process(delta: float) -> void:
 	
 	# Handle jump.
 	if jump_buffering > 0 and coyote_time > 0:
+		Global.play_sfx.emit(jump_sfx)
 		velocity.y = JUMP_VELOCITY
 		
 		jump_buffering = 0
@@ -129,6 +135,8 @@ func _physics_process(delta: float) -> void:
 			velocity.y = SLIDE_SPEED
 		
 		if jump_buffering > 0:
+			Global.play_sfx.emit(jump_sfx)
+			
 			# Wall jump, applying the wall side as a multiplier to make the jump to the right side
 			velocity = WALL_JUMP_VELOCITY * Vector2(wall_side, 1)
 			jump_buffering = 0
@@ -139,7 +147,7 @@ func _physics_process(delta: float) -> void:
 	var direction := Input.get_axis("Left", "Right")
 	
 	# If trying to move
-	if direction:
+	if direction and Global.player_can_control:
 		
 		# IF the direction the player is going and the direction they want to go are different things
 		var is_trying_to_turn:bool = xor(is_positive(velocity.x), is_positive(direction))
@@ -199,13 +207,23 @@ func _physics_process(delta: float) -> void:
 	
 	## Particles
 	
+	$Label.text = str(last_position.distance_to(global_position))
+	
 	# Make landing particles if hit the floor this frame.
-	if not was_on_floor and is_on_floor():
+	if not was_on_floor and is_on_floor() and last_position.distance_to(global_position) > 5:
 		Global.make_particle.emit(land_particle, global_position + Vector2(0, 8))
+		
+		Global.play_sfx.emit(land_sfx)
 	was_on_floor = is_on_floor() # Update for the next frame
+	
+	if not was_on_wall and is_on_wall_only() and last_position.distance_to(global_position) > 5:
+		Global.play_sfx.emit(land_sfx)
+	was_on_wall = is_on_wall_only()
 	
 	# Make wall sliding particles
 	wall_particle.emitting = is_on_wall_only()
 	wall_particle.global_position = global_position + Vector2(-8 * wall_side, 0)
+	
+	last_position = global_position
 	
 	move_and_slide()
