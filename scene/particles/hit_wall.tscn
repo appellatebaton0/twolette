@@ -1,0 +1,41 @@
+[gd_scene load_steps=7 format=3 uid="uid://cd3q0qk0l7maa"]
+
+[ext_resource type="Script" uid="uid://dotl2ogcek3l0" path="res://script/particle.gd" id="1_ygpv0"]
+
+[sub_resource type="Gradient" id="Gradient_vkdqu"]
+offsets = PackedFloat32Array(0)
+colors = PackedColorArray(0.192157, 0.882353, 0.72549, 0.454902)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_cnmvf"]
+gradient = SubResource("Gradient_vkdqu")
+width = 2
+height = 2
+
+[sub_resource type="Curve" id="Curve_yvxxh"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.810219, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_j37d3"]
+curve = SubResource("Curve_yvxxh")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_xqtal"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(1, 8, 1)
+direction = Vector3(0, -1, 0)
+initial_velocity_min = 2.0
+initial_velocity_max = 2.0
+gravity = Vector3(0, 4, 0)
+alpha_curve = SubResource("CurveTexture_j37d3")
+collision_mode = 1
+collision_friction = 0.0
+collision_bounce = 1.0
+
+[node name="HitWallParticle" type="GPUParticles2D"]
+amount = 48
+texture = SubResource("GradientTexture2D_cnmvf")
+process_material = SubResource("ParticleProcessMaterial_xqtal")
+script = ExtResource("1_ygpv0")
+free_once_done = false
+
+[connection signal="finished" from="." to="." method="_on_finished"]

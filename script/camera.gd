@@ -17,6 +17,12 @@ func get_follow_point() -> Vector2:
 	# Lerp between the current position and the player point.
 	var follow_point = lerp(global_position, player_point, follow_lerp)
 	
+	#
+	#if follow_point.x < -12*16:
+		#follow_point.x = -12*16
+	#elif follow_point.x > 12*16:
+		#follow_point.x = 12*16
+	
 	return follow_point
 	
 func _process(delta: float) -> void:

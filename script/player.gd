@@ -33,10 +33,15 @@ const SLIDE_SPEED:float = 150.0
 # Animation and Collision
 @onready var anim:AnimatedSprite2D = $AnimatedSprite2D
 
-# For running once on an event
+
+@onready var label:Label = $Label
+## Particles
+
+
 var was_on_floor:bool = false
 
-## Particles
+@onready var wall_particle:Particle = load("res://scene/particles/hit_wall.tscn").instantiate()
+
 
 @onready var land_particle:PackedScene = load("res://scene/particles/land.tscn")
 
@@ -73,21 +78,14 @@ func match_sign(value:float, to:float) -> float:
 func xor(a:bool, b:bool) -> bool:
 	return (a or b) and not (a and b)
 
+func _ready() -> void:
+	add_child(wall_particle)
+
 func _physics_process(delta: float) -> void:
-	
-	$Label.text = str(velocity)
 	
 	# Add the gravity.
 	if not is_on_floor() and not is_in_velocity_cloud:
 		velocity += get_gravity() * delta
-	
-	# Make landing particles
-	if not was_on_floor and is_on_floor():
-		Global.make_particle.emit(land_particle, global_position + Vector2(0, 8))
-	if is_on_floor():
-		was_on_floor = true
-	else:
-		was_on_floor = false
 	
 	## Jumping 
 	
@@ -116,13 +114,15 @@ func _physics_process(delta: float) -> void:
 	var wall_side:float = get_wall_normal().x
 	if is_on_wall_only() and left_floor_buffer == 0:
 		
-		
+		# Slow down upwards momentum significantly
 		if velocity.y < 0:
 			velocity.y /= 1.1
 		
+		# Override the gravity with slide acceleration
 		velocity.y -= get_gravity().y * delta
 		velocity.y += SLIDE_ACCELERATION * delta
 		
+		# Cap the slide speed
 		if velocity.y > SLIDE_SPEED:
 			velocity.y = SLIDE_SPEED
 		
@@ -133,8 +133,10 @@ func _physics_process(delta: float) -> void:
 	
 	## Movement
 	
-	# Get the input direction and handle the movement/deceleration.
+	# Get the input direction
 	var direction := Input.get_axis("Left", "Right")
+	
+	# If trying to move
 	if direction:
 		
 		# IF the direction the player is going and the direction they want to go are different things
@@ -153,31 +155,55 @@ func _physics_process(delta: float) -> void:
 			if not is_on_floor():
 				current_acceleration /= AIR_FRICTION
 		
-		# Move towards that goal.
+		# Move velocity.x towards where it should 
+		# be via the current acceleration.
 		velocity.x = move_toward(velocity.x, next_x_velocity, current_acceleration)
+	# If not trying to move
 	else:
-		
 		var current_friction:float = FRICTION if is_on_floor() else AIR_FRICTION
 	
 		# If not trying to move, slow down according to the current friction
 		velocity.x = move_toward(velocity.x, 0, current_friction)
 	
+	## Animation
+	
+	# If moving at all
 	if velocity != Vector2.ZERO:
 		anim.flip_h = velocity.x < 0
+		
+		# Walking animation/collision if on floor
 		if is_on_floor():
 			anim.play("walking", abs(velocity.x) / 100)
 			set_active_collision($WalkingCol)
+		
+		# Sliding animation/collision if on wall only
 		elif is_on_wall_only():
 			anim.play("sliding", velocity.y / 80)
 			set_active_collision($SlideCol)
+			
+			# Flip the collision and animation,
+			# depending on what side of the wall you're on
 			active_collision.position.x = match_sign(active_collision.position.x, -wall_side)
 			anim.flip_h = (wall_side + 1) / 2
+		
+		# Midair animation/collision if... midair, duh. (Not on floor or wall)
 		else:
 			anim.play("midair", (velocity.x + velocity.y) / 160)
 			set_active_collision($MidAirCol)
-		
+	# Play idle animation and use walking collision if not moving
 	else:
 		set_active_collision($WalkingCol)
 		anim.play("idle")
-
+	
+	## Particles
+	
+	# Make landing particles if hit the floor this frame.
+	if not was_on_floor and is_on_floor():
+		Global.make_particle.emit(land_particle, global_position + Vector2(0, 8))
+	was_on_floor = is_on_floor() # Update for the next frame
+	
+	# Make wall sliding particles
+	wall_particle.emitting = is_on_wall_only()
+	wall_particle.global_position = global_position + Vector2(-8 * wall_side, 0)
+	
 	move_and_slide()
